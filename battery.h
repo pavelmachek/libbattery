@@ -19,6 +19,8 @@ struct battery {
 };
 
 struct battery_info {
+	struct battery *battery;
+
 	enum battery_state state;
 	double fraction;
 	double seconds;
@@ -29,7 +31,7 @@ struct battery_info {
 struct battery *battery_init(void);
 double battery_fraction(struct battery *b);
 
-bool battery_fill_info(struct battery *b, struct battery_info *i);
-void battery_dump(struct battery *b, struct battery_info *i);
+bool battery_fill_info(struct battery_info *i);
+void battery_dump(struct battery_info *i);
 
 

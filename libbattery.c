@@ -103,7 +103,7 @@ static inline int fuel_level_LiIon(int mV, int mA, int mOhm)
 	return min((int)(1966 + sqrt(u))/100, 100);
 }
 
-double battery_estimate(struct battery *b, struct battery_info *i)
+double battery_estimate(struct battery_info *i)
 {
 	int mA;
 
@@ -113,7 +113,7 @@ double battery_estimate(struct battery *b, struct battery_info *i)
 }
 
 bool
-battery_fill_info(struct battery *b, struct battery_info *i)
+battery_fill_info(struct battery_info *i)
 {
 	const char *base = sys_class_power_supply_path;
 	struct dirent *dent;
@@ -232,13 +232,14 @@ double battery_fraction(struct battery *b)
 {
 	struct battery_info i = {0, };
 
-	if (!battery_fill_info(b, &i))
+	i.battery = b;
+	if (!battery_fill_info(&i))
 		return -1;
 
-	battery_dump(b, &i);
+	battery_dump(&i);
 
 	if (i.fraction < 0) {
-		return battery_estimate(b, &i);
+		return battery_estimate(&i);
 	}
 	return i.fraction;
 }
@@ -255,7 +256,7 @@ char *battery_state_string(enum battery_state s)
 	}
 }
 
-void battery_dump(struct battery *b, struct battery_info *i)
+void battery_dump(struct battery_info *i)
 {
 	printf("Battery %.0f %%\n", i->fraction * 100);
 	printf("Seconds %.0f\n", i->seconds);
