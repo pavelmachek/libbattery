@@ -105,9 +105,12 @@ static inline int fuel_level_LiIon(int mV, int mA, int mOhm)
 
 double battery_estimate(struct battery_info *i)
 {
-	int mA;
+	int mA = 100;
 
-	mA = 100;
+	if (!isnan(i->current)) {
+		mA = i->current * 1000;
+		printf("Have current %d mA\n", mA);
+	}
 
 	return fuel_level_LiIon(i->voltage * 1000, mA, 50) / 100.;
 }
