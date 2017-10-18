@@ -20,6 +20,16 @@
 
 #include "battery.h"
 
+#define max(a, b) \
+  ({ __typeof__ (a) _a = (a); \
+     __typeof__ (b) _b = (b);  \
+     _a > _b ? _a : _b; })
+
+#define min(a, b) \
+  ({ __typeof__ (a) _a = (a); \
+     __typeof__ (b) _b = (b);  \
+     _a < _b ? _a : _b; })
+
 static const char *sys_class_power_supply_path = "/sys/class/power_supply";
 
 static int
@@ -86,13 +96,21 @@ static inline int fuel_level_LiIon(int mV, int mA, int mOhm)
 
 	/* use linear approx. below 3.756V => 19.66% assuming 3.3V => 0% */
 	if (u < 0) {
-		return  max(((mV - 3300) * ((3756 - 3300) * 1966)) / 100000, 0);
+		return max(((mV - 3300) * ((3756 - 3300) * 1966)) / 100000, 0);
 	}
 
 	/* apply second part of formula */
-	return min((int)(1966 + int_sqrt(u))/100, 100);
+	return min((int)(1966 + sqrt(u))/100, 100);
 }
 
+double battery_estimate(struct battery *b, struct battery_info *i)
+{
+	int mA;
+
+	mA = 100;
+
+	return fuel_level_LiIon(i->voltage * 1000, mA, 50) / 100.;
+}
 
 bool
 battery_fill_info(struct battery *b, struct battery_info *i)
@@ -212,6 +230,10 @@ double battery_fraction(struct battery *b)
 		return -1;
 
 	battery_dump(b, &i);
+
+	if (i.fraction < 0) {
+		return battery_estimate(b, &i);
+	}
 	return i.fraction;
 }
 
