@@ -22,6 +22,7 @@ struct battery_info {
 	enum battery_state state;
 	double fraction;
 	double seconds;
+	double voltage;
 };
 
 

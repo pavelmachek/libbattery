@@ -109,6 +109,7 @@ battery_fill_info(struct battery *b, struct battery_info *i)
 	i->state = POWERSTATE_NO_BATTERY;  /* assume we're just plugged in. */
 	i->seconds = -1;
 	i->fraction = -1;
+	i->voltage = -1;
 
 	while ((dent = readdir(dirp)) != NULL) {
 		const char *name = dent->d_name;
@@ -117,6 +118,7 @@ battery_fill_info(struct battery *b, struct battery_info *i)
 		enum battery_state st;
 		int secs;
 		int pct;
+		int vlt;
 
 		if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
 			continue;  /* skip these, of course. */
@@ -158,6 +160,12 @@ battery_fill_info(struct battery *b, struct battery_info *i)
 			pct = (pct > 100) ? 100 : pct; /* clamp between 0%, 100% */
 		}
 
+		if (!read_power_file(base, name, "voltage_now", str, sizeof (str))) {
+			vlt = -1;
+		} else {
+			vlt = atoi(str);
+		}
+
 		if (!read_power_file(base, name, "time_to_empty_now", str, sizeof (str))) {
 			secs = -1;
 		} else {
@@ -181,8 +189,9 @@ battery_fill_info(struct battery *b, struct battery_info *i)
 
 		if (choose) {
 			i->seconds = secs;
-			i->fraction = pct/100;
+			i->fraction = pct/100.;
 			i->state = st;
+			i->voltage = vlt/1000000.;
 		}
 	}
 
@@ -211,4 +220,5 @@ void battery_dump(struct battery *b, struct battery_info *i)
 	printf("Battery %.0f %%\n", i->fraction * 100);
 	printf("Seconds %.0f\n", i->seconds);
 	printf("State %d\n", i->state);
+	printf("Voltage %.2F V\n", i->voltage);
 }
