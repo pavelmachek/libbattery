@@ -128,9 +128,11 @@ battery_fill_info(struct battery_info *i)
 	}
 
 	i->state = NO_BATTERY;  /* assume we're just plugged in. */
-	i->seconds = -1;
-	i->fraction = -1;
-	i->voltage = -1;
+        i->seconds = NAN;
+        i->fraction = NAN;
+        i->voltage = NAN;
+        i->current = NAN;
+        i->temperature = NAN;
 
 	while ((dent = readdir(dirp)) != NULL) {
 		const char *name = dent->d_name;
@@ -213,8 +215,8 @@ battery_fill_info(struct battery_info *i)
 		 *  (failing a report of minutes, we'll take the highest percent.)
 		 */
 
-		if ((secs < 0) && (i->seconds < 0)) {
-			if ((pct < 0) && (i->fraction < 0)) {
+		if ((secs < 0) && (isnan(i->seconds))) {
+		  if ((pct < 0) && (isnan(i->fraction))) {
 				choose = true;  /* at least we know there's a battery. */
 			} else if (pct > i->fraction * 100) {
 				choose = true;
