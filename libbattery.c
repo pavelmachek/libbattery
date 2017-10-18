@@ -124,7 +124,7 @@ battery_fill_info(struct battery *b, struct battery_info *i)
 		return false;
 	}
 
-	i->state = POWERSTATE_NO_BATTERY;  /* assume we're just plugged in. */
+	i->state = NO_BATTERY;  /* assume we're just plugged in. */
 	i->seconds = -1;
 	i->fraction = -1;
 	i->voltage = -1;
@@ -140,9 +140,11 @@ battery_fill_info(struct battery *b, struct battery_info *i)
 
 		if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
 			continue;  /* skip these, of course. */
-		} else if (!read_power_file(base, name, "type", str, sizeof (str))) {
+		} 
+		if (!read_power_file(base, name, "type", str, sizeof (str))) {
 			continue;  /* Don't know _what_ we're looking at. Give up on it. */
-		} else if (strcmp(str, "Battery\n") != 0) {
+		}
+		if (strcmp(str, "Battery\n") != 0) {
 			continue;  /* we don't care about UPS and such. */
 		}
 
@@ -158,17 +160,17 @@ battery_fill_info(struct battery *b, struct battery_info *i)
 
 		/* some drivers don't offer this, so if it's not explicitly reported assume it's present. */
 		if (read_power_file(base, name, "present", str, sizeof (str)) && (strcmp(str, "0\n") == 0)) {
-			st = POWERSTATE_NO_BATTERY;
+			st = NO_BATTERY;
 		} else if (!read_power_file(base, name, "status", str, sizeof (str))) {
-			st = POWERSTATE_UNKNOWN;  /* uh oh */
+			st = UNKNOWN;  /* uh oh */
 		} else if (strcmp(str, "Charging\n") == 0) {
-			st = POWERSTATE_CHARGING;
+			st = CHARGING;
 		} else if (strcmp(str, "Discharging\n") == 0) {
-			st = POWERSTATE_ON_BATTERY;
+			st = ON_BATTERY;
 		} else if ((strcmp(str, "Full\n") == 0) || (strcmp(str, "Not charging\n") == 0)) {
-			st = POWERSTATE_CHARGED;
+			st = FULL;
 		} else {
-			st = POWERSTATE_UNKNOWN;  /* uh oh */
+			st = UNKNOWN;  /* uh oh */
 		}
 
 		if (!read_power_file(base, name, "capacity", str, sizeof (str))) {
@@ -195,6 +197,10 @@ battery_fill_info(struct battery *b, struct battery_info *i)
 		 * We pick the battery that claims to have the most minutes left.
 		 *  (failing a report of minutes, we'll take the highest percent.)
 		 */
+
+		/* Nokia N900 has rx51-battery and bq27200-0; both have type=Battery,
+		   and unfortunately both refer to same battery.
+		*/
 		if ((secs < 0) && (i->seconds < 0)) {
 			if ((pct < 0) && (i->fraction < 0)) {
 				choose = true;  /* at least we know there's a battery. */
@@ -237,10 +243,22 @@ double battery_fraction(struct battery *b)
 	return i.fraction;
 }
 
+char *battery_state_string(enum battery_state s)
+{
+	switch (s) {
+	case NO_BATTERY: return "no battery";
+	case UNKNOWN: return "unknown";
+	case CHARGING: return "charging";
+	case ON_BATTERY: return "on battery";
+	case FULL: return "full";
+	default: return "internal error";
+	}
+}
+
 void battery_dump(struct battery *b, struct battery_info *i)
 {
 	printf("Battery %.0f %%\n", i->fraction * 100);
 	printf("Seconds %.0f\n", i->seconds);
-	printf("State %d\n", i->state);
+	printf("State %d -- %s\n", i->state, battery_state_string(i->state));
 	printf("Voltage %.2F V\n", i->voltage);
 }

@@ -8,11 +8,11 @@
 #include <stdbool.h>
 
 enum battery_state {
-  POWERSTATE_NO_BATTERY,
-  POWERSTATE_UNKNOWN,
-  POWERSTATE_CHARGING,
-  POWERSTATE_ON_BATTERY,
-  POWERSTATE_CHARGED,
+  NO_BATTERY,
+  UNKNOWN,
+  CHARGING,
+  ON_BATTERY,
+  FULL,
 };
 
 struct battery {
