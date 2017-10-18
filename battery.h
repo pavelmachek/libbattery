@@ -24,7 +24,9 @@ struct battery_info {
 	enum battery_state state;
 	double fraction;
 	double seconds;
-	double voltage;
+	double voltage;	/* In volts */
+	double current; /* In amperes, < 0 charging, > 0 discharging */
+	double temperature; /* Degrees celsius */
 };
 
 

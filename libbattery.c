@@ -134,9 +134,11 @@ battery_fill_info(struct battery_info *i)
 		bool choose = false;
 		char str[64];
 		enum battery_state st;
-		int secs;
-		int pct;
-		int vlt;
+		int secs = -1;
+		int pct = -1;
+		int vlt = -1;
+		int cur = -999999999;
+		int temp = -999999;
 
 		if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
 			continue;  /* skip these, of course. */
@@ -147,6 +149,14 @@ battery_fill_info(struct battery_info *i)
 		if (strcmp(str, "Battery\n") != 0) {
 			continue;  /* we don't care about UPS and such. */
 		}
+
+		if (!strcmp(name, "rx51-battery")) {
+		  /* Nokia N900 has rx51-battery and bq27200-0; both have type=Battery,
+		     and unfortunately both refer to same battery.
+		  */
+			continue;
+		}
+
 
 		/* if the scope is "device," it might be something like a PS4
 		   controller reporting its own battery, and not something that powers
@@ -173,22 +183,24 @@ battery_fill_info(struct battery_info *i)
 			st = UNKNOWN;  /* uh oh */
 		}
 
-		if (!read_power_file(base, name, "capacity", str, sizeof (str))) {
-			pct = -1;
-		} else {
+		if (read_power_file(base, name, "capacity", str, sizeof (str))) {
 			pct = atoi(str);
 			pct = (pct > 100) ? 100 : pct; /* clamp between 0%, 100% */
 		}
 
-		if (!read_power_file(base, name, "voltage_now", str, sizeof (str))) {
-			vlt = -1;
-		} else {
+		if (read_power_file(base, name, "voltage_now", str, sizeof (str))) {
 			vlt = atoi(str);
 		}
 
-		if (!read_power_file(base, name, "time_to_empty_now", str, sizeof (str))) {
-			secs = -1;
-		} else {
+		if (read_power_file(base, name, "current_now", str, sizeof (str))) {
+			cur = atoi(str);
+		}
+
+		if (read_power_file(base, name, "temp", str, sizeof (str))) {
+			temp = atoi(str);
+		}
+
+		if (read_power_file(base, name, "time_to_empty_now", str, sizeof (str))) {
 			secs = atoi(str);
 			secs = (secs <= 0) ? -1 : secs;  /* 0 == unknown */
 		}
@@ -198,9 +210,6 @@ battery_fill_info(struct battery_info *i)
 		 *  (failing a report of minutes, we'll take the highest percent.)
 		 */
 
-		/* Nokia N900 has rx51-battery and bq27200-0; both have type=Battery,
-		   and unfortunately both refer to same battery.
-		*/
 		if ((secs < 0) && (i->seconds < 0)) {
 			if ((pct < 0) && (i->fraction < 0)) {
 				choose = true;  /* at least we know there's a battery. */
@@ -212,10 +221,13 @@ battery_fill_info(struct battery_info *i)
 		}
 
 		if (choose) {
+		  	printf("choosen: %s\n", name);
 			i->seconds = secs;
 			i->fraction = pct/100.;
 			i->state = st;
 			i->voltage = vlt/1000000.;
+			i->current = cur/1000000.;
+			i->temperature = temp/10.;
 		}
 	}
 
@@ -261,5 +273,7 @@ void battery_dump(struct battery_info *i)
 	printf("Battery %.0f %%\n", i->fraction * 100);
 	printf("Seconds %.0f\n", i->seconds);
 	printf("State %d -- %s\n", i->state, battery_state_string(i->state));
-	printf("Voltage %.2F V\n", i->voltage);
+	printf("Voltage %.2f V\n", i->voltage);
+	printf("Current %.3f A\n", i->current);
+	printf("Temperature  %.1f C\n", i->temperature);
 }
