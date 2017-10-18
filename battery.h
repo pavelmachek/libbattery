@@ -22,7 +22,7 @@ struct battery_info {
 	struct battery *battery;
 
 	enum battery_state state;
-	double fraction;
+	double fraction; /* 1 == 100% */
 	double seconds;
 	double voltage;	/* In volts */
 	double current; /* In amperes, < 0 charging, > 0 discharging */
