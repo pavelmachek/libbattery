@@ -202,5 +202,13 @@ double battery_fraction(struct battery *b)
 	if (!battery_fill_info(b, &i))
 		return -1;
 
+	battery_dump(b, &i);
 	return i.fraction;
+}
+
+void battery_dump(struct battery *b, struct battery_info *i)
+{
+	printf("Battery %.0f %%\n", i->fraction * 100);
+	printf("Seconds %.0f\n", i->seconds);
+	printf("State %d\n", i->state);
 }
