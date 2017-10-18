@@ -138,7 +138,7 @@ battery_fill_info(struct battery_info *i)
 		int pct = -1;
 		int vlt = -1;
 		int cur = -999999999;
-		int temp = -999999;
+		int temp = -999999999;
 
 		if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
 			continue;  /* skip these, of course. */
@@ -222,12 +222,27 @@ battery_fill_info(struct battery_info *i)
 
 		if (choose) {
 		  	printf("choosen: %s\n", name);
-			i->seconds = secs;
-			i->fraction = pct/100.;
+			if (secs != -1)
+				i->seconds = secs;
+			else
+				i->seconds = NAN;
+			if (pct != -1)
+				i->fraction = pct/100.;
+			else
+				i->fraction = NAN;
 			i->state = st;
-			i->voltage = vlt/1000000.;
-			i->current = cur/1000000.;
-			i->temperature = temp/10.;
+			if (vlt != -1) 
+				i->voltage = vlt/1000000.;
+			else
+				i->voltage = NAN;
+			if (cur != -999999999)
+				i->current = cur/1000000.;
+			else
+				i->current = NAN;
+			if (temp != -999999999)
+				i->temperature = temp/10.;
+			else
+				i->temperature = NAN;
 		}
 	}
 
@@ -250,7 +265,7 @@ double battery_fraction(struct battery *b)
 
 	battery_dump(&i);
 
-	if (i.fraction < 0) {
+	if (isnan(i.fraction)) {
 		return battery_estimate(&i);
 	}
 	return i.fraction;
