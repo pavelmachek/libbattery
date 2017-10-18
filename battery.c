@@ -12,7 +12,7 @@
 int main(int argc, char *argv[])
 {
 	struct battery *b = battery_init();
-	double perc = battery_percent(b);
+	double perc = battery_fraction(b);
 
 	printf("Battery %.0f %%\n", perc * 100);
 		

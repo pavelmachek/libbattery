@@ -95,7 +95,7 @@ static inline int fuel_level_LiIon(int mV, int mA, int mOhm)
 
 
 bool
-GetPowerInfo_Linux_sys_class_power_supply(enum battery_state *state, int *seconds, int *percent)
+battery_fill_info(struct battery *b, struct battery_info *i)
 {
 	const char *base = sys_class_power_supply_path;
 	struct dirent *dent;
@@ -106,9 +106,9 @@ GetPowerInfo_Linux_sys_class_power_supply(enum battery_state *state, int *second
 		return false;
 	}
 
-	*state = POWERSTATE_NO_BATTERY;  /* assume we're just plugged in. */
-	*seconds = -1;
-	*percent = -1;
+	i->state = POWERSTATE_NO_BATTERY;  /* assume we're just plugged in. */
+	i->seconds = -1;
+	i->fraction = -1;
 
 	while ((dent = readdir(dirp)) != NULL) {
 		const char *name = dent->d_name;
@@ -169,20 +169,20 @@ GetPowerInfo_Linux_sys_class_power_supply(enum battery_state *state, int *second
 		 * We pick the battery that claims to have the most minutes left.
 		 *  (failing a report of minutes, we'll take the highest percent.)
 		 */
-		if ((secs < 0) && (*seconds < 0)) {
-			if ((pct < 0) && (*percent < 0)) {
+		if ((secs < 0) && (i->seconds < 0)) {
+			if ((pct < 0) && (i->fraction < 0)) {
 				choose = true;  /* at least we know there's a battery. */
-			} else if (pct > *percent) {
+			} else if (pct > i->fraction * 100) {
 				choose = true;
 			}
-		} else if (secs > *seconds) {
+		} else if (secs > i->seconds) {
 			choose = true;
 		}
 
 		if (choose) {
-			*seconds = secs;
-			*percent = pct;
-			*state = st;
+			i->seconds = secs;
+			i->fraction = pct/100;
+			i->state = st;
 		}
 	}
 
@@ -195,7 +195,12 @@ struct battery *battery_init(void)
 	return NULL;
 }
 
-double battery_percent(struct battery *b)
+double battery_fraction(struct battery *b)
 {
-	return -1;
+	struct battery_info i = {0, };
+
+	if (!battery_fill_info(b, &i))
+		return -1;
+
+	return i.fraction;
 }
